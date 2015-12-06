@@ -1,2 +1,2 @@
-French
-English
+f_French
+f_English
