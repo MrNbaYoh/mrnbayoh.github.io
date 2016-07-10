@@ -75,9 +75,33 @@
 <h3>
 <a id="scripts" class="anchor" href="#scripts" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Scripts</h3>
 
-<p>You can find here the different scripts for the different versions of the game : </p>
+<p>You can find here the different scripts for the different versions of the game : <select id="versionList" onchange="read_code(this.value)">
+	<option slected="selected">--Please select a game version--</option>
+	<optgroup label="US">
+		<option value="basic_scripts/us_321.txt">3.2.1</option>
+	</optgroup>
+</select>
+</p>
 
-<p>Soon</p>
+<code id="code_basic"></code>
+<script>
+function read_code(textFile){
+	document.getElementById('code_basic').innerHTML = '';
+	
+    var xhr = new XMLHttpRequest;
+    xhr.open('GET', textFile);
+    xhr.onload = show_code;
+    xhr.send();
+}
+
+function show_code(){
+    document.getElementById('code_basic').innerHTML = '<pre>' + this.response + '</pre>';
+}
+
+read(document.getElementById('versionList').value);
+</script>
+<br>
+<br>
 
 <h3>
 <a id="credits" class="anchor" href="#credits" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Credits</h3>

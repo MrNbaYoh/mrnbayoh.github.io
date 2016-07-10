@@ -1,1 +1,1 @@
-console.log('This would be the main JS file.');
+document.getElementById(code_basic).innerHTML = "TOTOTOTOTOTOT";
