@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+    
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Pokemon 6th gen shiny calculator</title>
+        <meta name="description" content="Probability calculator">
+        <link rel="stylesheet" href="main.css">
+    </head>
+    <body>
+        
+        <h1>Pokemon 6th gen shiny calculator</h1>
+        <hr>
+        <h2>DexNav</h2>
+        
+        Chain : <input id='dexnav_chain' type="number" min="0" max="99" onchange="computeProbability()">
+        <br>
+        Search level : <input id='dexnav_counter' type="number" min="0" max="999" onchange="computeProbability()">
+        <br>
+        Shiny charm : <input id='dexnav_shiny_charm' type="checkbox" onchange="computeProbability()">
+        <br>
+        <br>
+        <div id='dexnav_prob'>DexNav Boolean Shiny Probability : N/A</div>
+        <div id='total_prob'>Final Shiny Probability : N/A</div>
+        
+        <script>
+            function computeProbability()
+            {
+                var chain = document.getElementById('dexnav_chain').value;
+                var counter = document.getElementById('dexnav_counter').value;
+                var charm = document.getElementById('dexnav_shiny_charm').checked;
+                
+                var d0 = 0;
+                if(counter > 200)
+                {
+                    d0 += counter - 200;
+                    counter = 200;
+                }
+                
+                if(counter > 100)
+                {
+                    d0 += (counter * 2) - 200;
+                    counter = 100;
+                }
+                
+                if(counter > 0)
+                {
+                    d0 += counter * 6;
+                }
+                
+                var d8 = Math.ceil(d0 * 0.01);
+                //since the random generated number is an integer and not a floating-point number
+                //we have to round up the d8 value to get the good probability
+                //example :  if d8=12.18, the pokemon is shiny only if random_num<12.18
+                //           but random_num is an integer so the pokemon is shiny if random_num<13
+                //           so the probability is 13/10000 (13 possible values for random_num that are less than 13) (10000 is the number of possible values for random_num)
+                
+                var recompute = 1 + (chain == 49 ? 5 : 0) + (chain == 99 ? 10 : 0) + (charm ? 2 : 0);
+                
+                //Probability to get at least 1 shiny value during dexnav pokemon generation
+                //Binomial law n = recompute and p = d8 / 10000
+                //P(X >= 1) = 1 - P(X = 0)
+                //P(X = 0) = pow(1 - p, n)
+                //P(X >= 1) = 1 - pow(1 - p, n)
+                var dexnav_proba = 1.0 - Math.pow((1.0 - (d8 / 10000)), recompute);
+                document.getElementById('dexnav_prob').innerHTML = "DexNav Boolean Shiny Probability : " + dexnav_proba + "<br>";
+                
+                recompute = (charm ? 3 : 1);
+                
+                //Probability to get a shiny PID during PID generation
+                //Truncated geometric distribution => stop when a success happen => loop broken when we got shiny PID
+                //with n = recompute and p = 1/4096 the proba to get a shiny PID
+                //P(X = 0) = pow(1 - p, n) // proba that the event does not occur before n tries
+                //P(X >= 1) = 1 - P(X = 0)
+                //P(X >= 1) = 1 - pow(1 - p, n)
+                var shinyPID_proba = 1.0 - Math.pow(1.0 - (1.0 / 4096), recompute);
+                
+                //event D : shiny boolean value during dexnav gen
+                //event S : shiny PID
+                //If D is realized then S too
+                //If not D then the proba that S is realized is shinyPID_proba
+                //So we have P(S) = P(not D cross S) + P(D cross S)
+                //with P(not D cross S) = (1.0 - dexnav_proba) * shinyPID_proba
+                //and P(D cross S) = dexnav_proba * 1
+                var total_proba = ((1.0 - dexnav_proba) * shinyPID_proba) + (dexnav_proba * 1);
+                
+                document.getElementById('total_prob').innerHTML = "Final Shiny Probability : " + total_proba;
+                    
+            }
+        </script>
+        
+        
+    </body>
+</html>
