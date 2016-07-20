@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Pokemon ORAS DexNav Shiny Encounter Probability Analysis : ">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Pokemon ORAS DexNav Shiny Encounter Probability Analysis</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/MrNbaYoh">View on GitHub</a>
+
+          <h1 id="project_title">Pokemon ORAS DexNav Shiny Encounter Probability Analysis</h1>
+          <h2 id="project_tagline"></h2>
+
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h3>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h3>
+
+<p>Many people have been speculating on the probabilities to find a shiny pokemon with the dexnav on pokemon ORAS, but we don't really know actually what are the probabilities. Some analysis based on real encounters gave some results making us think about a 1/200 or 1/300 probability, but this does not really convinced me. So I decided to do some researches about the actual probabilities and the way the game decide if the pokemon is shiny or not.</p>
+
+<h3>
+<a id="how-a-pokemon-is-considered-shiny" class="anchor" href="#how-a-pokemon-is-considered-shiny" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How a pokemon is considered shiny?</h3>
+
+<p>We know every pokemon has a specific PID which is randomly generated when the pokemon itself is generated. The PID is a 32bits value and the pokemon is shiny if (TID xor SID xor PID_high xor PID_low) &lt; 16. So yeah we have a probability of 16/65536 (65536 is the max value for a unsigned 16bits value) so 1/4096.<br>
+We know the game can increase the probability with the shiny charm, it computes up to three times the PID if the one generated is not a "shiny one". We can think the dexnav is doing something similar, increasing the number of PID computations, but contrary to what we think the "computation count" is the same as a normal encounter.</p>
+
+<h3>
+<a id="how-the-dexnav-could-increase-the-probability" class="anchor" href="#how-the-dexnav-could-increase-the-probability" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How the dexnav could increase the probability?</h3>
+
+<p>I investigated how the dexnav is generating the pokemon and before doing anything with the PID, it generates some basic informations that we may see on the bottom screen when we are using the dexnav, such as the pokemon level, id...
+These infos are generated and stored in memory before the pokemon is generated, and analysing them I just found out that these infos contain a boolean value for the shininess of the pokemon. When this value is set to 1, the pokemon is automatically shiny and when it is set to 0 then the PID computation is done like for any normal encounter.<br>
+So we can think about such a Probability Tree Diagram :<br>
+<img src="https://mrnbayoh.github.io/pkmn6gen/dexnav_shiny/shiny_tree_first.png" alt=""></p>
+
+<h3>
+<a id="what-is-the-probability-that-this-value-is-set-to-1" class="anchor" href="#what-is-the-probability-that-this-value-is-set-to-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What is the probability that this value is set to 1?</h3>
+
+<p>After some researches I found out the algorithm used during the generation to determine if this value is either 1 or 0. This is completely different than the PID generation and computation loop. First the game computes a random 16bits integer value between 0 (included) and 10000 (excluded), so 10000 potential values. Then this value is compared to another one computed before (not random) and if the random value is the smallest then the pokemon is shiny.<br>
+So basically it does something like this : <code>if random_value &lt; other_value then shiny=1</code><br>
+Looking how the other value is calculated, I quickly found out it is based on the search level for the current pokemon, and here is the way it is computed :  </p>
+
+<pre><code>double other_value = 0.0;  
+if(level &gt; 200)  
+{  
+    other_value += level - 200;  
+    level = 200;  
+}  
+
+if(level &gt; 100)  
+{  
+    other_value += (level * 2) - 200;  
+    level = 100;  
+}       
+
+if(level &gt; 0)  
+{  
+    other_value += level * 6;  
+}  
+
+other_value *= 0.01;  
+</code></pre>
+
+<p>Now we know how to compute the other value but in fact, like for the PID calculation, the random value and the comparison can be done multiple times.  </p>
+
+<p>I will now use the terms dexnav_level instead of "the other value" and "dexnav_random" instead of "the random value". So, like the PID calculation the loop generally iterates once without the charm and three times with the charm, but we may remark that even if the condition is satisfied, the loop is not broken. So you could potentially get multiple "shiny values" at once (this is pointless).  </p>
+
+<p>Investigating what could alter the number of iterations, I found out that if the pokemon is going to be the 50th of your dexnav chain the loop iterates 5 more times and if it is going to be the 100th then the loop iterates 10 more times, so let's call this the chain_bonus. Let n be the number of times the loop iterates, we have :<br>
+<code>n = 1 + charm_bonus + chain_bonus</code><br>
+with charm_bonus = 0 without the charm and 2 with the charm.  </p>
+
+<p>We can know deal with probabilities. Let C be the event : "the condition is satisfied". Since the dexnav_random is an integer and dexnav_level is a floating-point value,<br>
+<code>if dexnav_random &lt; dexnav_level then dexnav_random &lt; ceil(dexnav_level)</code>
+with ceil(dexnav_level) being the smallest integer that is greater than dexnav_level. There is actually ceil(dexnav_level) values smaller than dexnav_level (and ceil(dexnav_level) because of the dexnav_random being an integer), so we have :<br>
+<code>P(C) = ceil(dexnav_level)/10000</code>  </p>
+
+<p>So now we are able to compute the probability of C. So let D be the event : "the dexnav boolean value is set to 1 (pokemon shiny beacause of the dexnav)". D is realized only if C is realized at least once during the multiple loop iterations.<br>
+We have a Bernoulli experiment with a success : C is realized, and a failure : C is not realized. We repeat this experiment n times, and count the number X of success. We want to know the probability that C is realized at least once, so :  </p>
+
+<pre><code>P(X &gt;= 1) = 1 - P(X = 0)  
+P(X = 0) = pow(1-P(C), n)  
+P(X &gt;= 1) = 1 - pow(1-P(C), n)  
+P(D) = 1 - pow(1-P(C), n)  
+</code></pre>
+
+<p>So we are now able to determine the probability that the pokemon is set shiny during the dexnav generation process, but don't forget our initial probability tree, even if the pokemon isn't set shiny here, it can still be shiny because of the random PID computation.</p>
+
+<h3>
+<a id="the-final-probability" class="anchor" href="#the-final-probability" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The final probability</h3>
+
+<p>We need to know the probability to have a shiny PID in any case. Without the shiny charm we have the well-known 1/4096, but with the charm the PID is computed 3 times and the loop is broken if a success occurs (when we get a shiny PID). So it is similar to the previous situation but now the process can be interrupted, we repeat up to 3 times and we stop if a success occurs. It can be illustrated by this tree (3 iterations):<br>
+<img src="https://mrnbayoh.github.io/pkmn6gen/dexnav_shiny/shiny_tree_second.png" alt=""></p>
+
+<p>We have X the step for which the success occurs and we consider X=0 if the success do not happen, so we are in the case of a truncated geometric law. Similarly to the previous situation we have :<br>
+<code>P(X &gt;= 1) = 1 - P(X = 0)</code><br>
+and<br>
+<code>P(X = 0) = pow(4095/4096, n1)</code><br>
+where n1 is the number of iterations, so finally :<br>
+<code>P(X &gt;= 1) = 1 - pow(4095/4096, n1)</code><br>
+we have the probability of a shiny PID in any case.  </p>
+
+<p><strong>/!\ Some people are saying the probability with the shiny charm is 3/4096 BECAUSE we compute the PID 3 times, SO the probability is multiplied by 3. This is WRONG, actually it is effectively around 3/4096 but it's not because you repeat 3 times the experiment that the probability is multiplied by 3. /!\</strong></p>
+
+<p>So finally, we know all the probabilities necessary to compute the final P(S) :<br>
+<code>P(S) = P(D ∩ S) + P(!D ∩ S)</code>
+and then :<br>
+<code>P(S) = (1 - pow(1-P(C), n)) * 1 + (1 - (1 - pow(1-P(C), n)) * (1 - pow(4095/4096, n1))</code>
+so we have :<br>
+<code>P(S) = 1 - pow(1-P(C), n) + pow(1-P(C), n) * (1 - pow(4095/4096, n1))</code></p>
+
+<h3>
+<a id="conclusion" class="anchor" href="#conclusion" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Conclusion</h3>
+
+<p>We are now able to know what is the probability to find a shiny pokemon, based on the searhc level, the chain and the shiny charm. If you find a mistake, please open an issue on the corresponding github repo :). I quickly implemented a small calculator, see : <a href="https://mrnbayoh.github.io/pkmn6gen/shiny_calculator/">6th gen shiny calculator</a></p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
