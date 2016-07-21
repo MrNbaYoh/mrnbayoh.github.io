@@ -14,9 +14,9 @@
         <hr>
         <h2>DexNav</h2>
         
-        Chain : <input id='dexnav_chain' type="number" value="0" min="0" max="99" onchange="computeProbability()">
+        Chain : <input id='dexnav_chain' type="number" value="0" min="0" max="100" onchange="computeProbability()"><button type="button" onclick="incrChain(); computeProbability();">+</button>
         <br>
-        Search level : <input id='dexnav_counter' type="number" value="0" min="0" max="999" onchange="computeProbability()">
+        Search level : <input id='dexnav_counter' type="number" value="0" min="0" max="999" onchange="computeProbability()"><button type="button" onclick="incrCounter(); computeProbability();">+</button>
         <br>
         Shiny charm : <input id='dexnav_shiny_charm' type="checkbox" onchange="computeProbability()">
         <br>
@@ -25,9 +25,31 @@
         <div id='total_prob'>Final Shiny Probability : N/A</div>
         
         <script>
+            function incrChain()
+            {
+                var chain = document.getElementById('dexnav_chain').value;
+                if(chain == 100)
+                    document.getElementById('dexnav_chain').value = 0;
+                
+                document.getElementById('dexnav_chain').value =  Number(chain) + 1;
+            }
+            
+            function incrCounter()
+            {
+                var counter = document.getElementById('dexnav_counter').value;
+                if(counter < 999)
+                    document.getElementById('dexnav_counter').value = Number(counter) + 1;
+            }
+            
             function computeProbability()
             {
                 var chain = document.getElementById('dexnav_chain').value;
+                if(chain == 101)
+                {
+                    document.getElementById('dexnav_chain').value = 0;
+                    chain = 0;
+                }
+                
                 var counter = document.getElementById('dexnav_counter').value;
                 var charm = document.getElementById('dexnav_shiny_charm').checked;
                 
