@@ -14,14 +14,14 @@
         <hr>
         <h2>DexNav</h2>
         
-        Chain : <input id='dexnav_chain' type="number" value="0" min="0" max="100" onchange="computeProbability()"><button type="button" onclick="incrChain(); computeProbability();">+</button>
+        Chain : <input id='dexnav_chain' type="number" value="0" min="0" max="100" onchange="computeTotalProbability()"><button type="button" onclick="incrChain(); computeTotalProbability();">+</button>
         <br>
-        Search level : <input id='dexnav_counter' type="number" value="0" min="0" max="999" onchange="computeProbability()"><button type="button" onclick="incrCounter(); computeProbability();">+</button>
+        Search level : <input id='dexnav_counter' type="number" value="0" min="0" max="999" onchange="computeTotalProbability()"><button type="button" onclick="incrCounter(); computeTotalProbability();">+</button>
         <br>
-        Shiny charm : <input id='dexnav_shiny_charm' type="checkbox" onchange="computeProbability()">
+        Shiny charm : <input id='dexnav_shiny_charm' type="checkbox" onchange="computeTotalProbability()">
         <br>
         <br>
-        <div id='dexnav_prob'>DexNav Boolean Shiny Probability : N/A</div>
+        <!-- <div id='dexnav_prob'>DexNav Boolean Shiny Probability : N/A</div> -->
         <div id='total_prob'>Final Shiny Probability : N/A</div>
         
         <script>
@@ -41,7 +41,7 @@
                     document.getElementById('dexnav_counter').value = Number(counter) + 1;
             }
             
-            function computeProbability()
+            function computeProbability(random_bonus)
             {
                 var chain = document.getElementById('dexnav_chain').value;                
                 var counter = document.getElementById('dexnav_counter').value;
@@ -72,7 +72,7 @@
                 //           but random_num is an integer so the pokemon is shiny if random_num<13
                 //           so the probability is 13/10000 (13 possible values for random_num that are less than 13) (10000 is the number of possible values for random_num)
                 
-                var recompute = 1 + (chain == 49 ? 5 : 0) + (chain == 99 ? 10 : 0) + (charm ? 2 : 0);
+                var recompute = 1 + (chain == 49 ? 5 : 0) + (chain == 99 ? 10 : 0) + (charm ? 2 : 0) + (random_bonus ? 4 : 0);
                 
                 //Probability to get at least 1 shiny value during dexnav pokemon generation
                 //Binomial law n = recompute and p = d8 / 10000
@@ -80,12 +80,6 @@
                 //P(X = 0) = pow(1 - p, n)
                 //P(X >= 1) = 1 - pow(1 - p, n)
                 var dexnav_proba = 1.0 - Math.pow((1.0 - (d8 / 10000)), recompute);
-                
-                var inverse = Math.round(1.0/dexnav_proba);
-                document.getElementById('dexnav_prob').innerHTML = "DexNav Boolean Shiny Probability : " + dexnav_proba;
-                if(dexnav_proba != 0)
-                     document.getElementById('dexnav_prob').innerHTML += " so approximatively 1/" + inverse;
-                document.getElementById('dexnav_prob').innerHTML += "<br>";
                 
                 
                 recompute = (charm ? 3 : 1);
@@ -107,9 +101,17 @@
                 //and P(D cross S) = dexnav_proba * 1
                 var total_proba = ((1.0 - dexnav_proba) * shinyPID_proba) + (dexnav_proba * 1);
                 
-                inverse = Math.round(1.0/total_proba);
+                return total_proba;  
+            }
+            
+            function computeTotalProbability()
+            {
+                var with_bonus = computeProbability(1);
+                var without_bonus = computeProbability(0);
+                
+                var total_proba = 0.04 * with_bonus + 0.96 * without_bonus;
+                var inverse = Math.round(1.0/total_proba);
                 document.getElementById('total_prob').innerHTML = "Final Shiny Probability : " + total_proba + " so approximatively 1/" + inverse;
-                    
             }
         </script>
         

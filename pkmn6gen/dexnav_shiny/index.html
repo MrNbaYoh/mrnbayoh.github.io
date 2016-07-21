@@ -82,12 +82,12 @@ other_value *= 0.01;
 <code>n = 1 + charm_bonus + chain_bonus</code><br>
 with charm_bonus = 0 without the charm and 2 with the charm.  </p>
 
-<p>We can know deal with probabilities. Let C be the event : "the condition is satisfied". Since the dexnav_random is an integer and dexnav_level is a floating-point value,<br>
+<p>We can now deal with probabilities. Let C be the event : "the condition is satisfied". Since the dexnav_random is an integer and dexnav_level is a floating-point value,<br>
 <code>if dexnav_random &lt; dexnav_level then dexnav_random &lt; ceil(dexnav_level)</code>
 with ceil(dexnav_level) being the smallest integer that is greater than dexnav_level. There is actually ceil(dexnav_level) values smaller than dexnav_level (and ceil(dexnav_level) because of the dexnav_random being an integer), so we have :<br>
 <code>P(C) = ceil(dexnav_level)/10000</code>  </p>
 
-<p>So now we are able to compute the probability of C. So let D be the event : "the dexnav boolean value is set to 1 (pokemon shiny beacause of the dexnav)". D is realized only if C is realized at least once during the multiple loop iterations.<br>
+<p>So now we are able to compute the probability of C. So let D be the event : "the dexnav boolean value is set to 1 (pokemon shiny because of the dexnav)". D is realized only if C is realized at least once during the multiple loop iterations.<br>
 We have a Bernoulli experiment with a success : C is realized, and a failure : C is not realized. We repeat this experiment n times, and count the number X of success. We want to know the probability that C is realized at least once, so :  </p>
 
 <pre><code>P(X &gt;= 1) = 1 - P(X = 0)  
@@ -121,10 +121,32 @@ and then :<br>
 so we have :<br>
 <code>P(S) = 1 - pow(1-P(C), n) + pow(1-P(C), n) * (1 - pow(4095/4096, n1))</code></p>
 
+<h3><a id="the-mysterious-value" class="anchor" href="#the-mysterious-value" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The mysterious value (why I was wrong)</h3>
+<p>We know how to compute P(S) but I missed a value in the algorithm which after many tests seemed to be permanently equal to 0. But actually it is not always equal to 0 and when it is equal to 1 then n is incremented by 4, so 4 more iterations for the dexnav loop. To decide if this value is set to 1 or 0 the game compute a random 16bits value between 0 (included) and 100(excluded) and if the random value is less than 4, then this specific boolean is set to 1. So basically it does :<br>
+<code>if (random < 4) then random_bonus=1</code><br>
+where random_bonus is a boolean value.<br>
+So the this is the new tree :<br>
+<img src="https://mrnbayoh.github.io/pkmn6gen/dexnav_shiny/shiny_tree_third.png" alt=""></p>
+    
+<p>With B the event : "the random bonus is applied". So, now we have :<br>
+<pre><code>P(S) = P(B ∩ D ∩ S) + P(B ∩ !D ∩ S) + P(!B ∩ D ∩ S) + P(!B ∩ !D ∩ S)  
+P(S) = 0.04 * (1 - pow(1-P(C), n+4)) 
+       + 0.04 * pow(1-P(C), n+4) * (1 - pow(4095/4096, n1)) 
+       + 0.96 * (1 - pow(1-P(C), n)) 
+       + 0.96 * pow(1-P(C), n) * (1 - pow(4095/4096, n1))
+</code></pre></p>
+        
+<p>And n is computed like this : 
+<pre><code>n = 1 + charm_bonus + chain_bonus;
+if(random_value == 1)
+    n += 4;
+</code></pre></p>
+
+          
 <h3>
 <a id="conclusion" class="anchor" href="#conclusion" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Conclusion</h3>
 
-<p>We are now able to know what is the probability to find a shiny pokemon, based on the searhc level, the chain and the shiny charm. If you find a mistake, please open an issue on the corresponding github repo :). I quickly implemented a small calculator, see : <a href="https://mrnbayoh.github.io/pkmn6gen/shiny_calculator/">6th gen shiny calculator</a></p>
+<p>We are now able to know what is the probability to find a shiny pokemon, based on the search level, the chain and the shiny charm. If you find a mistake, please open an issue on the corresponding github repo :). I quickly implemented a small calculator, see : <a href="https://mrnbayoh.github.io/pkmn6gen/shiny_calculator/">6th gen shiny calculator</a></p>
       </section>
     </div>
 
