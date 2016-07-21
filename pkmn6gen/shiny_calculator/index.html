@@ -64,7 +64,13 @@
                 //P(X = 0) = pow(1 - p, n)
                 //P(X >= 1) = 1 - pow(1 - p, n)
                 var dexnav_proba = 1.0 - Math.pow((1.0 - (d8 / 10000)), recompute);
-                document.getElementById('dexnav_prob').innerHTML = "DexNav Boolean Shiny Probability : " + dexnav_proba + "<br>";
+                
+                var inverse = Math.round(1.0/dexnav_proba);
+                document.getElementById('dexnav_prob').innerHTML = "DexNav Boolean Shiny Probability : " + dexnav_proba;
+                if(dexnav_proba != 0)
+                     document.getElementById('dexnav_prob').innerHTML += " so approximatively 1/" + inverse;
+                document.getElementById('dexnav_prob').innerHTML += "<br>";
+                
                 
                 recompute = (charm ? 3 : 1);
                 
@@ -85,7 +91,8 @@
                 //and P(D cross S) = dexnav_proba * 1
                 var total_proba = ((1.0 - dexnav_proba) * shinyPID_proba) + (dexnav_proba * 1);
                 
-                document.getElementById('total_prob').innerHTML = "Final Shiny Probability : " + total_proba;
+                inverse = Math.round(1.0/total_proba);
+                document.getElementById('total_prob').innerHTML = "Final Shiny Probability : " + total_proba + " so approximatively 1/" + inverse;
                     
             }
         </script>
