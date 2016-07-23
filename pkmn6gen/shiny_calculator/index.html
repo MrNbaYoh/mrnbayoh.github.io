@@ -14,18 +14,18 @@
         <hr>
         <h2>DexNav</h2>
         
-        Chain : <input id='dexnav_chain' type="number" value="0" min="0" max="100" onchange="computeTotalProbability()"><button type="button" onclick="incrChain(); computeTotalProbability();">+</button>
+        Chain : <input id='dexnav_chain' type="number" value="0" min="0" max="100" onchange="computeTotalDexProbability()"><button type="button" onclick="incrDexChain(); computeTotalDexProbability();">+</button>
         <br>
-        Search level : <input id='dexnav_counter' type="number" value="0" min="0" max="999" onchange="computeTotalProbability()"><button type="button" onclick="incrCounter(); computeTotalProbability();">+</button>
+        Search level : <input id='dexnav_counter' type="number" value="0" min="0" max="999" onchange="computeTotalDexProbability()"><button type="button" onclick="incrDexCounter(); computeTotalDexProbability();">+</button>
         <br>
-        Shiny charm : <input id='dexnav_shiny_charm' type="checkbox" onchange="computeTotalProbability()">
+        Shiny charm : <input id='dexnav_shiny_charm' type="checkbox" onchange="computeTotalDexProbability()">
         <br>
         <br>
         <!-- <div id='dexnav_prob'>DexNav Boolean Shiny Probability : N/A</div> -->
-        <div id='total_prob'>Final Shiny Probability : N/A</div>
+        <div id='total_prob_dexnav'>Final Shiny Probability : N/A</div>
         
         <script>
-            function incrChain()
+            function incrDexChain()
             {
                 var chain = document.getElementById('dexnav_chain').value;
                 if(chain == 100)
@@ -34,14 +34,14 @@
                 document.getElementById('dexnav_chain').value =  Number(chain) + 1;
             }
             
-            function incrCounter()
+            function incrDexCounter()
             {
                 var counter = document.getElementById('dexnav_counter').value;
                 if(counter < 999)
                     document.getElementById('dexnav_counter').value = Number(counter) + 1;
             }
             
-            function computeProbability(random_bonus)
+            function computeDexProbability(random_bonus)
             {
                 var chain = document.getElementById('dexnav_chain').value;                
                 var counter = document.getElementById('dexnav_counter').value;
@@ -104,17 +104,52 @@
                 return total_proba;  
             }
             
-            function computeTotalProbability()
+            function computeTotalDexProbability()
             {
-                var with_bonus = computeProbability(1);
-                var without_bonus = computeProbability(0);
+                var with_bonus = computeDexProbability(1);
+                var without_bonus = computeDexProbability(0);
                 
                 var total_proba = 0.04 * with_bonus + 0.96 * without_bonus;
                 var inverse = Math.round(1.0/total_proba);
-                document.getElementById('total_prob').innerHTML = "Final Shiny Probability : " + total_proba + " so approximatively 1/" + inverse;
+                document.getElementById('total_prob_dexnav').innerHTML = "Final Shiny Probability : " + total_proba + " so approximatively 1/" + inverse;
             }
         </script>
         
+        <hr>
+        <h2>Chain Fishing</h2>
+        
+        Chain : <input id='fish_chain' type="number" value="0" min="0" onchange="computeFishProbability()"><button type="button" onclick="incrFishChain(); computeFishProbability();">+</button>
+        <br>
+        Shiny charm : <input id='fish_shiny_charm' type="checkbox" onchange="computeFishProbability()">
+        <br>
+        <br>
+        <div id='total_prob_fish'>Final Shiny Probability : N/A</div>
+        
+        <script>
+        
+            function incrFishChain()
+            {
+                var chain = document.getElementById('fish_chain').value;                
+                document.getElementById('fish_chain').value =  Number(chain) + 1;
+            }
+            
+            function computeFishProbability()
+            {
+                
+                var chain = document.getElementById('fish_chain').value;
+                var charm = document.getElementById('fish_shiny_charm').checked;
+
+                if(chain > 20) chain = 20;
+
+                var recompute = 1 + (charm ? 2 : 0) + chain*2;
+                var total_proba = 1.0 - Math.pow(4095/4096, recompute);
+
+                var inverse = Math.round(1.0 / total_proba);
+
+                document.getElementById('total_prob_fish').innerHTML = "Final Shiny Probability : " + total_proba + " so approximatively 1/" + inverse;
+            }
+        
+        </script>
         
     </body>
 </html>
