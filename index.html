@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Pokemon 6G Chain Fishing Probability Analysis : ">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Pokemon 6G Chain Fishing Probability Analysis</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/MrNbaYoh">View on GitHub</a>
+
+          <h1 id="project_title">Pokemon 6G Chain Fishing Probability Analysis</h1>
+          <h2 id="project_tagline"></h2>
+
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h3>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h3>
+
+<p>We know that chaining pokemon while fishing increase the probability to find a shiny pokemon. Some people think the chain increase the probability until the 40th encounter, but like the dexnav until few days ago, the real probabilities are unknown. So to continue my work on probabilities to find shiny pokemons, I decided to investigate the chain fishing.
+I will not talk another time of how the game treats the shininess, and neither the base probability to find a shiny pokemon.</p>
+
+<h3>
+<a id="how-the-chain-fishing-increases-the-probability" class="anchor" href="#how-the-chain-fishing-increases-the-probability" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How the chain fishing increases the probability</h3>
+
+<p>The game is actually able to compute multiple PID when the pokemon is generated, for each one it checks if it is shiny and if the PID is effectively shiny then it stops computing PIDs.<br>
+So basically it looks like that :  </p>
+
+<pre><code>unsigned int n = ...;
+...
+unsigned int PID;
+for(unsigned int i = 0; i &lt; n; i++)
+{
+    PID = randomPID();
+    if(isShiny(TID, SID, PID)) break;
+}
+</code></pre>
+
+<p>So to increase the probability, the game just increases the value of n. The base value of n is 1 and with the shiny charm it is incremented by 2. When you do a chain fishing, the game counts the number of chained encounters and for each new chained pokemon, it increments n by 2. But is the probability increased until the chain is broken or is there a maximum value ?</p>
+
+<h3>
+<a id="the-maximum-chain-value" class="anchor" href="#the-maximum-chain-value" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The maximum chain value</h3>
+
+<p>Analysing the heap memory I just located where the current chain count is stored. Then I manually edited this value, replaced it by something very big like 255, and looked how n was incremented. And here is the result, n is increased until the chain reaches the 20th pokemon. So n is computed like this :<br>
+    unsigned int chain = ...;
+    ...
+    unsigned int n = 1;</p>
+
+<pre><code>if(shiny_charm)
+    n += 2;
+
+if(fishing)
+{
+    if(chain &gt; 20)
+        chain = 20;
+    n += 2 * chain;
+}
+</code></pre>
+
+<p>Let A be the event : "the PID is shiny". We have P(A) = 1/4096. We repeat the experiment n times and X is the step when the event A is realized, if the event never happens then we consider X=0.<br>
+So finally we have :  </p>
+
+<pre><code>P(X &gt;= 1) = 1 - P(X = 0)
+P(X = 0) = pow((1 - (1/4096)), n)
+         = pow(4095/4096, n)
+P(X &gt;= 1) = 1 - pow(4095/4096, n)
+</code></pre>
+
+<h3>
+<a id="conclusion" class="anchor" href="#conclusion" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Conclusion</h3>
+
+<p>We are now able to compute the probability to find a shiny pokemon when using the chain fishing method. We may remark that it is quite effective, here is my calculator allowing you to compute the probability based on your chain : 
+<a href="https://mrnbayoh.github.io/pkmn6gen/shiny_calculator/">6th gen shiny calculator</a></p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
