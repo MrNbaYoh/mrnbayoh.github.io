@@ -55,11 +55,12 @@ for(unsigned int i = 0; i &lt; n; i++)
 <a id="the-maximum-chain-value" class="anchor" href="#the-maximum-chain-value" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The maximum chain value</h3>
 
 <p>Analysing the heap memory I just located where the current chain count is stored. Then I manually edited this value, replaced it by something very big like 255, and looked how n was incremented. And here is the result, n is increased until the chain reaches the 20th pokemon. So n is computed like this :<br>
-    unsigned int chain = ...;
-    ...
-    unsigned int n = 1;</p>
+</p>
 
-<pre><code>if(shiny_charm)
+<pre><code>unsigned int chain = ...;
+...
+unsigned int n = 1;
+if(shiny_charm)
     n += 2;
 
 if(fishing)
