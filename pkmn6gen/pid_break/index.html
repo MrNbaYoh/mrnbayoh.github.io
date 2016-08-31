@@ -136,10 +136,10 @@ First we know that we are going to modify the table, and we can simplify the alg
 
 <p>We can now find, for each bit of the final value, an expression based on R12. (here all the '+' mean XOR, sorry :S)<br>
 Let B[X] be the Xth bit of R12 :<br>
-<a href="https://github.com/MrNbaYoh/pkmn6gen/pid_break/PID_R12.PNG">PID</a>  </p>
+<a href="https://mrnabyoh.github.io/pkmn6gen/pid_break/PID_R12.PNG">PID</a>  </p>
 
 <p>So we can have PID_HIGH xor PID_LOW too and since X xor X = 0, we can simplify each expression and we have :<br>
-<a href="https://github.com/MrNbaYoh/pkmn6gen/pid_break/PID_LOW_XOR_HIGH.PNG">PID</a></p>
+<a href="https://mrnabyoh.github.io/pkmn6gen/pid_break/PID_LOW_XOR_HIGH.PNG">PID</a></p>
 
 <p>We want PID_HIGH xor PID_LOW xor TID xor SID &lt; 16, so the first four bits do no matter because a four bits value is always less than 16. To have PID_HIGH xor PID_LOW xor TID xor SID &lt; 16, we need to have the last 12 bits of (PID_HIGH xor PID_LOW) equal to the last 12 bits of (TID xor SID), so when we xor the two values, these bits are cleared.  </p>
 
@@ -147,14 +147,14 @@ Let B[X] be the Xth bit of R12 :<br>
 <a id="solving-the-system-of-equation" class="anchor" href="#solving-the-system-of-equation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Solving the system of equation</h3>
 
 <p>To solve the 12bits equation we can treat the problem with a matrix, we can make a matrix of coefficients, as if we were solving a linear system of equation, the particularity here is that each operation is a XOR and each coefficient is 1 or 0. So we have something like that, each column stand for each bit of R12 with the corresponding coefficient in each expression of each bit of the 12 highest bits of PID_HIGH xor PID_LOW :<br>
-<a href="https://github.com/MrNbaYoh/pkmn6gen/pid_break/PID_Matrix_1.PNG">PID</a>  </p>
+<a href="https://mrnabyoh.github.io/pkmn6gen/pid_break/PID_Matrix_1.PNG">PID</a>  </p>
 
 <p>With a modified version of the Gauss-Jordan algorithm a got a staggered matrix :<br>
-<a href="https://github.com/MrNbaYoh/pkmn6gen/pid_break/PID_Matrix_2.PNG">PID</a>  </p>
+<a href="https://mrnabyoh.github.io/pkmn6gen/pid_break/PID_Matrix_2.PNG">PID</a>  </p>
 
 <p>This allowed me to find what are the bits of R12 that can be randomly chosen and the one we have to compute, based on the bits of the highest 12 bits of (TID xor SID) and the other random bits of R12.<br>
 So I ended up with this :<br>
-<a href="https://github.com/MrNbaYoh/pkmn6gen/pid_break/PID_Formula_Final.PNG">PID</a>  </p>
+<a href="https://mrnabyoh.github.io/pkmn6gen/pid_break/PID_Formula_Final.PNG">PID</a>  </p>
 
 <p>Where B[X] is the Xth bit of R12 and A[X] is the Xth bit of the highest 12bits of (TID xor SID).</p>
 
