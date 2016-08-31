@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="How to &quot;break&quot; the PID generation ? : ">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>How to &quot;break&quot; the PID generation ?</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/MrNbaYoh">View on GitHub</a>
+
+          <h1 id="project_title">How to &quot;break&quot; the PID generation ?</h1>
+          <h2 id="project_tagline"></h2>
+
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h3>
+<a id="how-is-the-pid-generated" class="anchor" href="#how-is-the-pid-generated" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How is the PID generated?</h3>
+
+<p>Doing my researches on how I could make a shiny cheat, I just found the algorithm used to generate a "random" PID. My first question was "Is there a way to make the game generate a shiny PID? What are the conditions to make this algorithm generate a shiny PID?"<br>
+I worked on that and yes there's a way to do it, and I'm going to explain it right here.<br>
+To generate a random PID the game use a Mersenne Twister Table, a table containing a large number of random integers. Here is the algorithm used :  </p>
+
+<pre><code>unsigned int generatePID()
+{
+    unsigned int r0 = (unsigned int)&amp;table;
+    unsigned int r1, r2, r3, r4, r5, r12;
+    bool t = false;
+
+    r3 = *(unsigned int*)r0;
+    r1 = r3 + 1;
+    r2 = r3 + 0x100;
+    r2 = r2 + 0x8D;
+
+    if(r1 &gt;= 0x270) r1 -= 0x270;
+    if(r2 &gt;= 0x270) r2 -= 0x270;
+
+    r12 = (unsigned int)&amp;table + (r1 &lt;&lt; 2);
+    r3 = (unsigned int)&amp;table + (r3 &lt;&lt; 2);
+    r5 = (unsigned int)&amp;table + (r2 &lt;&lt; 2);
+
+    r4 = *(unsigned int*)(r3 + 4);
+    r2 = *(unsigned int*)(r12 + 4);
+    r12 = *(unsigned int*)(r5 + 4);
+
+    r4 = r4 &amp; 0x80000000;
+    r5 = r2 &amp; 0x7FFFFFFF;
+
+    r4 = r4 | r5;
+
+    t = (r2 == 1);
+
+    r2 = r4 &gt;&gt; 1;
+
+    if(t)
+    {
+        r4 = 0x9908b0df;
+        r2 = r2 ^ r4;
+    }
+
+    r2 = r2 ^ r12;
+
+    r1 = 0x9d2c56ff;
+    r0 = r2 ^ (r2 &gt;&gt; 11);
+
+    r2 = r1 &amp; (r0 &lt;&lt; 7);
+    r1 = 0xefc67fff;
+    r0 = r0 ^ r2;
+    r1 = r1 &amp; (r0 &lt;&lt; 15);
+    r0 = r0 ^ r1;
+    r0 = r0 ^ (r0 &gt;&gt; 18);
+
+    return r0;
+}
+</code></pre>
+
+<p>In fact the algorithm writes new values in the table, but it's not important for us. We can see the generation is mainly based on three values picked from the table. The more interesting thing here is that all the algorithm is based on the table and some logical operations.<br>
+First we know that we are going to modify the table, and we can simplify the algorithm and get rid of the condition (r2 == 1), we have to put the value 0 where r2 is read. We can also then put the value 0 where r4 is read (r2 and r4 are two consecutive values in the table) so we have an easier algorithm :  </p>
+
+<pre><code>unsigned int generatePID()
+{
+    unsigned int r0 = (unsigned int)&amp;table;
+    unsigned int r1, r2, r3, r4, r5, r12;
+    bool t = false;
+
+    r3 = *(unsigned int*)r0;
+    r1 = r3 + 1;
+    r2 = r3 + 0x100;
+    r2 = r2 + 0x8D;
+
+    if(r1 &gt;= 0x270) r1 -= 0x270;
+    if(r2 &gt;= 0x270) r2 -= 0x270;
+
+    r12 = (unsigned int)&amp;table + (r1 &lt;&lt; 2);
+    r3 = (unsigned int)&amp;table + (r3 &lt;&lt; 2);
+    r5 = (unsigned int)&amp;table + (r2 &lt;&lt; 2);
+
+    r4 = 0;
+    r2 = 0;
+    r12 = *(unsigned int*)(r5 + 4);
+
+    r2 = r12;
+
+    r1 = 0x9d2c56ff;
+    r0 = r2 ^ (r2 &gt;&gt; 11);
+
+    r2 = r1 &amp; (r0 &lt;&lt; 7);
+    r1 = 0xefc67fff;
+    r0 = r0 ^ r2;
+    r1 = r1 &amp; (r0 &lt;&lt; 15);
+    r0 = r0 ^ r1;
+    r0 = r0 ^ (r0 &gt;&gt; 18);
+
+    return r0;
+}
+</code></pre>
+
+<p>The interesting part starts after r12 is read, we can express the final r0 in terms of the value of r12 :)<br>
+<code>unsigned int F = R12 ^ ((R12) &gt;&gt; 11) ^ (0x9D2C56FF &amp; ((R12 ^ ((R12) &gt;&gt; 11)) &lt;&lt; 7)) ^ (0xEFC67FFF &amp; (((R12 ^ ((R12) &gt;&gt; 11)) ^ (0x9D2C56FF &amp; ((R12 ^ ((R12) &gt;&gt; 11)) &lt;&lt; 7))) &lt;&lt; 15)) ^ ((((R12 ^ ((R12) &gt;&gt; 11)) ^ (0x9D2C56FF &amp; ((R12 ^ ((R12) &gt;&gt; 11)) &lt;&lt; 7))) ^ (0xEFC67FFF &amp; (((R12 ^ ((R12) &gt;&gt; 11)) ^ (0x9D2C56FF &amp; ((R12 ^ ((R12) &gt;&gt; 11)) &lt;&lt; 7))) &lt;&lt; 15))) &gt;&gt; 18);</code>  </p>
+
+<h3>
+<a id="finding-bits-formula" class="anchor" href="#finding-bits-formula" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Finding bits formula</h3>
+
+<p>We can now find, for each bit of the final value, an expression based on R12. (here all the '+' mean XOR, sorry :S)<br>
+Let B[X] be the Xth bit of R12 :<br>
+<a href="https://github.com/MrNbaYoh/pkmn6gen/pid_break/PID_R12.PNG">PID</a>  </p>
+
+<p>So we can have PID_HIGH xor PID_LOW too and since X xor X = 0, we can simplify each expression and we have :<br>
+<a href="https://github.com/MrNbaYoh/pkmn6gen/pid_break/PID_LOW_XOR_HIGH.PNG">PID</a></p>
+
+<p>We want PID_HIGH xor PID_LOW xor TID xor SID &lt; 16, so the first four bits do no matter because a four bits value is always less than 16. To have PID_HIGH xor PID_LOW xor TID xor SID &lt; 16, we need to have the last 12 bits of (PID_HIGH xor PID_LOW) equal to the last 12 bits of (TID xor SID), so when we xor the two values, these bits are cleared.  </p>
+
+<h3>
+<a id="solving-the-system-of-equation" class="anchor" href="#solving-the-system-of-equation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Solving the system of equation</h3>
+
+<p>To solve the 12bits equation we can treat the problem with a matrix, we can make a matrix of coefficients, as if we were solving a linear system of equation, the particularity here is that each operation is a XOR and each coefficient is 1 or 0. So we have something like that, each column stand for each bit of R12 with the corresponding coefficient in each expression of each bit of the 12 highest bits of PID_HIGH xor PID_LOW :<br>
+<a href="https://github.com/MrNbaYoh/pkmn6gen/pid_break/PID_Matrix_1.PNG">PID</a>  </p>
+
+<p>With a modified version of the Gauss-Jordan algorithm a got a staggered matrix :<br>
+<a href="https://github.com/MrNbaYoh/pkmn6gen/pid_break/PID_Matrix_2.PNG">PID</a>  </p>
+
+<p>This allowed me to find what are the bits of R12 that can be randomly chosen and the one we have to compute, based on the bits of the highest 12 bits of (TID xor SID) and the other random bits of R12.<br>
+So I ended up with this :<br>
+<a href="https://github.com/MrNbaYoh/pkmn6gen/pid_break/PID_Formula_Final.PNG">PID</a>  </p>
+
+<p>Where B[X] is the Xth bit of R12 and A[X] is the Xth bit of the highest 12bits of (TID xor SID).</p>
+
+<h3>
+<a id="conclusion" class="anchor" href="#conclusion" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Conclusion</h3>
+
+<p>We are now able to generate a random number and then modify some bits to make the game generate a shiny PID. We have to compute an integer with the final formulas we got in the previous part and write it to the table where R12 is read (and write some 0 where r2 and r4 are read). The result of this work is the newest shiny cheat plugin that you can find here : <a href="https://github.com/hartmannaf/PokemonCheatPlugin">https://github.com/hartmannaf/PokemonCheatPlugin</a><br>
+We can now say the shiny PID equation is solved ;)</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
